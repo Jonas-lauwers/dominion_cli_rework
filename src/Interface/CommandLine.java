@@ -11,7 +11,7 @@ import java.io.IOException;
 
 public class CommandLine {
 
-	   private static GameEngine gameEngine;
+    private static GameEngine gameEngine;
     private static Scanner input;
     private static SaveGameConnection saveGameConnection;
 

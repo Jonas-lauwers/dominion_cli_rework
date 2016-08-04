@@ -280,8 +280,8 @@ public class CommandLine {
                 case 1:
                     cardNumber = getUserInput("Enter card number or 0 to cancel: ", 0, gameEngine.getCurrentPlayer().getDeck("Hand").size());
                     if (cardNumber > 0) {
-                        String cardName = gameEngine.getCurrentPlayer().getDeck("Hand").getCard(cardNumber - 1).getName();
-                        playCard(cardNumber - 1, cardName, false);
+                        Card card = gameEngine.getCurrentPlayer().getDeck("Hand").getCard(cardNumber - 1);
+                        playCard(cardNumber - 1, card);
                     }
                     break;
                 case 2:
@@ -290,12 +290,13 @@ public class CommandLine {
                     if (deckName.equals("Cancel")) {
                         break;
                     }
-                    if (deckName.equals("Curse")) {
-                        gameEngine.buyCard(deckName, 0);
+                    if (deckName.toLowerCase().equals("curse")) {
+                        gameEngine.buyCard(gameEngine.getStack(deckName).getCards()[0],deckName);
                         break;
                     }
-                    cardNumber = getUserInput("Enter card number: ", 1, gameEngine.getDeck(deckName).length);
-                    gameEngine.buyCard(deckName, cardNumber - 1);
+                    Card[] cards = gameEngine.getStack(deckName).getCards();
+                    cardNumber = getUserInput("Enter card number: ", 1, cards.length);
+                    gameEngine.buyCard(cards[cardNumber - 1], deckName);
                     break;
                 case 3:
                     gameEngine.endTurn();
@@ -318,14 +319,14 @@ public class CommandLine {
         showEndGame();
     }
 
-    private static void playCard(int cardNumber, String cardName, boolean isThroneRoom) {
-        if (gameEngine.playCard(cardNumber, isThroneRoom)) {
+    private static void playCard(int cardNumber, Card card) {
+        if (gameEngine.playCard(card)) {
             List<Player> playerList = gameEngine.getPlayers();
             Player player = gameEngine.getCurrentPlayer();
             int userInput;
-            Card card;
             String deckName;
-            switch (cardName) {
+            Card[] cards;
+            switch (card.getName()) {
                 case "Cellar":
                     showPlayerStatus(player);
                     int discardCards = 0;
@@ -362,11 +363,12 @@ public class CommandLine {
                         break;
                     }
                     if (deckName.equals("Curse")) {
-                        gameEngine.buyCard(deckName, 0, true);
+                        gameEngine.buyCard(gameEngine.getStack(deckName).getCards()[0], deckName);
                         break;
                     }
-                    cardNumber = getUserInput("Enter card number(Max cost 4): ", 1, gameEngine.getDeck(deckName).length) - 1;
-                    gameEngine.getCardOfValue(deckName, cardNumber, 4);
+                    cards = gameEngine.getStack(deckName).getCards();
+                    cardNumber = getUserInput("Enter card number(Max cost 4): ", 1, cards.length) - 1;
+                    gameEngine.getCardOfValue(deckName, cards[cardNumber], 4);
                     break;
                 case "Feast":
                     gameEngine.trashPlayedCard();
@@ -376,11 +378,12 @@ public class CommandLine {
                         break;
                     }
                     if (deckName.equals("Curse")) {
-                        gameEngine.buyCard(deckName, 0, true);
+                        gameEngine.buyCard(gameEngine.getStack(deckName).getCards()[0], deckName);
                         break;
                     }
-                    cardNumber = getUserInput("Enter card number(Max cost 5): ", 1, gameEngine.getDeck(deckName).length) - 1;
-                    gameEngine.getCardOfValue(deckName, cardNumber, 5);
+                    cards = gameEngine.getStack(deckName).getCards();
+                    cardNumber = getUserInput("Enter card number(Max cost 5): ", 1, cards.length) - 1;
+                    gameEngine.getCardOfValue(deckName, cards[cardNumber], 5);
                     break;
                 case "Moneylender":
                     userInput = getUserInput("Press 1 to do the action, press 2 to continue without: ", 1, 2);
@@ -410,11 +413,12 @@ public class CommandLine {
                         break;
                     }
                     if (deckName.equals("Curse")) {
-                        gameEngine.buyCard(deckName, 0);
+                        gameEngine.buyCard(gameEngine.getStack(deckName).getCards()[0], deckName);
                         break;
                     }
-                    cardNumber = getUserInput("Enter card number(Max value " + maxValue + "): ", 1, gameEngine.getDeck(deckName).length) - 1;
-                    gameEngine.getCardOfValue(deckName, cardNumber, maxValue);
+                    cards = gameEngine.getStack(deckName).getCards();
+                    cardNumber = getUserInput("Enter card number(Max value " + maxValue + "): ", 1, cards.length) - 1;
+                    gameEngine.getCardOfValue(deckName, cards[cardNumber], maxValue);
                     break;
                 //TODO make real fix .... if card gets played the index of the card gets changed ... and also when the playing card plays cards thats why it fucks :D
                 case "Throne Room":
@@ -422,8 +426,8 @@ public class CommandLine {
                     int userInputThroneRoom = getUserInput("Choose action card to play twice: ", 1, player.getDeck("Hand").size()) - 1;
                     card = player.getDeck("Hand").getCard(userInputThroneRoom);
                     if (card.isAction()) {
-                        playCard(userInputThroneRoom, card.getName(), true);
-                        playCard(userInputThroneRoom, card.getName(), true);
+                        playCard(userInputThroneRoom, card);
+                        playCard(userInputThroneRoom, card);
                         player.getDeck("Hand").moveCardToDeck(userInputThroneRoom, player.getDeck("Table"));
                     }
                     break;
@@ -467,11 +471,12 @@ public class CommandLine {
                             break;
                         }
                         if (deckName.equals("Curse")) {
-                            gameEngine.buyCard(deckName, 0, true);
+                        gameEngine.buyCard(gameEngine.getStack(deckName).getCards()[0], deckName);
                             break;
                         }
-                        userInput = getUserInput("Enter card number(Max value " + maxValueMine + "): ", 1, gameEngine.getDeck(deckName).length) - 1;
-                        gameEngine.getCardOfValue(deckName, userInput, maxValueMine);
+                        cards = gameEngine.getStack(deckName).getCards();
+                        userInput = getUserInput("Enter card number(Max value " + maxValueMine + "): ", 1, cards.length) - 1;
+                        gameEngine.getCardOfValue(deckName, cards[userInput], maxValueMine);
                     }
                     break;
                 case "Adventurer":
@@ -495,13 +500,13 @@ public class CommandLine {
                     }
                     break;
                 case "Bureaucrat":
-                    Deck deck = gameEngine.getGameTable().get("Treasure")[1];
-                    card = deck.getCard(0);
-                    gameEngine.drawCardFromTable(deck, card, player, "Deck");
+                    cards = gameEngine.getStack("treasure").getCards();
+                    card = cards[0];
+                    gameEngine.drawCardFromTable("treasure", card, player, "Deck");
                     for (int i = 0; i < playerList.size(); i++) {
                         if (playerList.get(i) != player) {
                             if (willGetAttacked(playerList.get(i))) {
-                                if (playerList.get(i).getDeck("Hand").hasCardOfType("Victory")) {
+                                if (playerList.get(i).getDeck("Hand").hasVictoryCards()) {
                                     clearScreen();
                                     showPlayerStatus(playerList.get(i));
                                     userInput = getUserInput("Choose victory card you want to show: ", 1, playerList.get(i).getDeck("Hand").size());
@@ -588,9 +593,8 @@ public class CommandLine {
                     for (int i = 0; i < playerList.size(); i++) {
                         if (player != playerList.get(i)) {
                             if (willGetAttacked(playerList.get(i))) {
-                                deck = gameEngine.getDeck("Curse")[0];
-                                card = deck.getCard(0);
-                                gameEngine.drawCardFromTable(deck, card, playerList.get(i));
+                                card = gameEngine.getStack("curse").getCards()[0];
+                                gameEngine.drawCardFromTable("curse", card, playerList.get(i),"discard");
                             }
                         }
                     }
@@ -598,12 +602,11 @@ public class CommandLine {
                 default:
                     break;
             }
-            gameEngine.checkPhaseChange();
         }
     }
 
     private static boolean willGetAttacked(Player player) {
-        if (player.getDeck("Hand").hasCardOfType("Reaction")) {
+        if (player.getDeck("Hand").hasReactionCards()) {
             int userInput = getUserInput(player.getName() + " press 1 to counter attack card . press 2 to do nothing: ", 1, 2);
             if (userInput == 1) {
                 return false;

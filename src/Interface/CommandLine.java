@@ -281,7 +281,7 @@ public class CommandLine {
                     cardNumber = getUserInput("Enter card number or 0 to cancel: ", 0, gameEngine.getCurrentPlayer().getDeck("Hand").size());
                     if (cardNumber > 0) {
                         Card card = gameEngine.getCurrentPlayer().getDeck("Hand").getCard(cardNumber - 1);
-                        playCard(cardNumber - 1, card);
+                        playCard(card);
                     }
                     break;
                 case 2:
@@ -318,16 +318,20 @@ public class CommandLine {
         gameEngine.endGame();
         showEndGame();
     }
+    
+    private static void playCard(Card card) {
+        playCard(card,false);
+    }
 
-    private static void playCard(int cardNumber, Card card) {
-        if (gameEngine.playCard(card)) {
+    private static void playCard(Card card, boolean throneRoom) {
+        if (gameEngine.playCard(card) || throneRoom) {
             List<Player> playerList = gameEngine.getPlayers();
             Player player = gameEngine.getCurrentPlayer();
             int userInput;
             String deckName;
             Card[] cards;
             switch (card.getName()) {
-                case "Cellar":
+                case "cellar":
                     showPlayerStatus(player);
                     int discardCards = 0;
                     userInput = getUserInput("Enter a cardnumber you want to discard or 0 to continue: ", 0, player.getDeck("Hand").size());
@@ -339,24 +343,26 @@ public class CommandLine {
                     }
                     gameEngine.drawCardsFromPlayerDeck(player, discardCards);
                     break;
-                case "Chapel":
+                case "chapel":
                     showPlayerStatus(player);
                     int maxTrashedCards = 4;
-                    userInput = getUserInput("Enter a cardnumber you want to trash or 0 to continue: ", 0, player.getDeck("Hand").size());
-                    while (userInput != 0 && maxTrashedCards > 0) {
-                        maxTrashedCards--;
-                        gameEngine.trashFromHand(player, userInput - 1);
-                        showPlayerStatus(player);
-                        userInput = getUserInput("Enter a cardnumber you want to trash or 0 to continue: ", 0, player.getDeck("Hand").size());
+                    userInput = 1;
+                    while ((userInput+1 != 0) && (maxTrashedCards > 0) && (player.getDeck("hand").size() > 0)) {
+                        userInput = getUserInput("Enter a cardnumber you want to trash or 0 to continue: ", 0, player.getDeck("Hand").size()) - 1;
+                        if(userInput != -1) {
+                            maxTrashedCards--;
+                            gameEngine.trashFromHand(player, userInput);
+                            showPlayerStatus(player);
+                        }
                     }
                     break;
-                case "Chancellor":
+                case "chancellor":
                     userInput = getUserInput("Press 1 to discard your current deck 2 to continue: ", 1, 2);
                     if (userInput == 1) {
                         gameEngine.discardDeck(player);
                     }
                     break;
-                case "Workshop":
+                case "workshop":
                     showBuyMenu();
                     deckName = getUserInputDeck();
                     if (deckName.equals("Cancel")) {
@@ -367,10 +373,10 @@ public class CommandLine {
                         break;
                     }
                     cards = gameEngine.getStack(deckName).getCards();
-                    cardNumber = getUserInput("Enter card number(Max cost 4): ", 1, cards.length) - 1;
-                    gameEngine.getCardOfValue(deckName, cards[cardNumber], 4);
+                    userInput = getUserInput("Enter card number(Max cost 4): ", 1, cards.length) - 1;
+                    gameEngine.getCardOfValue(deckName, cards[userInput], 4);
                     break;
-                case "Feast":
+                case "feast":
                     gameEngine.trashPlayedCard();
                     showBuyMenu();
                     deckName = getUserInputDeck();
@@ -382,10 +388,10 @@ public class CommandLine {
                         break;
                     }
                     cards = gameEngine.getStack(deckName).getCards();
-                    cardNumber = getUserInput("Enter card number(Max cost 5): ", 1, cards.length) - 1;
-                    gameEngine.getCardOfValue(deckName, cards[cardNumber], 5);
+                    userInput = getUserInput("Enter card number(Max cost 5): ", 1, cards.length) - 1;
+                    gameEngine.getCardOfValue(deckName, cards[userInput], 5);
                     break;
-                case "Moneylender":
+                case "moneylender":
                     userInput = getUserInput("Press 1 to do the action, press 2 to continue without: ", 1, 2);
                     if (userInput == 1) {
                         boolean copperSelected = false;
@@ -402,7 +408,7 @@ public class CommandLine {
                         }
                     }
                     break;
-                case "Remodel":
+                case "remodel":
                     showPlayerStatus(player);
                     userInput = getUserInput("Enter cardnumber of the card you wish to trash: ", 1, player.getDeck("Hand").size()) - 1;
                     int maxValue = gameEngine.getSelectedCard(userInput).getCost() + 2;
@@ -417,28 +423,28 @@ public class CommandLine {
                         break;
                     }
                     cards = gameEngine.getStack(deckName).getCards();
-                    cardNumber = getUserInput("Enter card number(Max value " + maxValue + "): ", 1, cards.length) - 1;
-                    gameEngine.getCardOfValue(deckName, cards[cardNumber], maxValue);
+                    userInput = getUserInput("Enter card number(Max value " + maxValue + "): ", 1, cards.length) - 1;
+                    gameEngine.getCardOfValue(deckName, cards[userInput], maxValue);
                     break;
-                //TODO make real fix .... if card gets played the index of the card gets changed ... and also when the playing card plays cards thats why it fucks :D
-                case "Throne Room":
+                //TODO: make real fix .... if card gets played the index of the card gets changed ... and also when the playing card plays cards thats why it fucks :D
+                case "throne room":
                     showPlayerStatus(player);
                     int userInputThroneRoom = getUserInput("Choose action card to play twice: ", 1, player.getDeck("Hand").size()) - 1;
                     card = player.getDeck("Hand").getCard(userInputThroneRoom);
-                    if (card.isAction()) {
-                        playCard(userInputThroneRoom, card);
-                        playCard(userInputThroneRoom, card);
-                        player.getDeck("Hand").moveCardToDeck(userInputThroneRoom, player.getDeck("Table"));
+                    if (card.isKingdom()) {
+                        playCard(card,true);
+                        playCard(card,true);
+                        player.getDeck("Hand").moveCardToDeck(card, player.getDeck("Table"));
                     }
                     break;
-                case "Council Room":
+                case "council room":
                     for (int i = 0; i < playerList.size(); i++) {
                         if (player != playerList.get(i)) {
                             gameEngine.drawCardsFromPlayerDeck(playerList.get(i), 1);
                         }
                     }
                     break;
-                case "Library":
+                case "library":
                     Deck aside = new Deck();
                     while (player.getDeck("Hand").size() < 7) {
                         card = player.getDeck("Deck").pop();
@@ -446,7 +452,7 @@ public class CommandLine {
                             gameEngine.discardDeck(player);
                             card = player.getDeck("Deck").pop();
                         }
-                        if (card.isAction()) {
+                        if (card.isKingdom()) {
                             userInput = getUserInput("Press 1 to put " + card.toString() + " aside, press 2 to add to your hand: ", 1, 2);
                             if (userInput == 1) {
                                 aside.add(card);
@@ -459,7 +465,7 @@ public class CommandLine {
                     }
                     aside.moveDeckTo(player.getDeck("Discard"));
                     break;
-                case "Mine":
+                case "mine":
                     showPlayerStatus(player);
                     userInput = getUserInput("Give cardnumber of treasure card you wish to trash: ", 1, player.getDeck("Hand").size()) - 1;
                     if (gameEngine.checkSpecificCard(gameEngine.getSelectedCard(userInput).getType(), "Treasure")) {
@@ -476,10 +482,10 @@ public class CommandLine {
                         }
                         cards = gameEngine.getStack(deckName).getCards();
                         userInput = getUserInput("Enter card number(Max value " + maxValueMine + "): ", 1, cards.length) - 1;
-                        gameEngine.getCardOfValue(deckName, cards[userInput], maxValueMine);
+                        gameEngine.getCardOfValue(deckName, cards[userInput], maxValueMine, "hand");
                     }
                     break;
-                case "Adventurer":
+                case "adventurer":
                     ArrayList<Card> temp = new ArrayList<>();
                     int treasureCards = 0;
                     while (treasureCards < 2) {
@@ -499,7 +505,7 @@ public class CommandLine {
                         player.getDeck("Discard").add(c);
                     }
                     break;
-                case "Bureaucrat":
+                case "bureaucrat":
                     cards = gameEngine.getStack("treasure").getCards();
                     card = cards[0];
                     gameEngine.drawCardFromTable("treasure", card, player, "Deck");
@@ -509,8 +515,15 @@ public class CommandLine {
                                 if (playerList.get(i).getDeck("Hand").hasVictoryCards()) {
                                     clearScreen();
                                     showPlayerStatus(playerList.get(i));
-                                    userInput = getUserInput("Choose victory card you want to show: ", 1, playerList.get(i).getDeck("Hand").size());
+                                    userInput = getUserInput("Choose victory card you want to show: ", 1, playerList.get(i).getDeck("Hand").size())-1;
+                                    card = playerList.get(i).getDeck("Hand").getCard(userInput);
+                                    while(!card.isVictory()) { 
+                                       userInput = getUserInput(card.getName()+" is not a Victory card.\nChoose victory card you want to show: ", 1, playerList.get(i).getDeck("Hand").size())-1;
+                                        card = playerList.get(i).getDeck("Hand").getCard(userInput);
+                                    }
                                     System.out.println(playerList.get(i).getName() + " is showing:\n" + playerList.get(i).getDeck("Hand").getCard(userInput).toString());
+                                    playerList.get(i).getDeck("deck").add(0, card);
+                                    playerList.get(i).getDeck("hand").remove(userInput);
                                     getUserInput("Press 1 to continue", 1, 1);
                                 } else {
                                     clearScreen();
@@ -521,7 +534,7 @@ public class CommandLine {
                         }
                     }
                     break;
-                case "Militia":
+                case "militia":
                     for (int i = 0; i < playerList.size(); i++) {
                         if (playerList.get(i) != player) {
                             if (willGetAttacked(playerList.get(i))) {
@@ -536,7 +549,7 @@ public class CommandLine {
                         }
                     }
                     break;
-                case "Spy":
+                case "spy":
                     clearScreen();
                     for (int i = 0; i < playerList.size(); i++) {
                         if (willGetAttacked(playerList.get(i))) {
@@ -550,24 +563,34 @@ public class CommandLine {
                         }
                     }
                     break;
-                case "Thief":
+                //TODO rework this with a deck or something and make it show both cards and let the user choose afterwards ... not its not logical
+                case "thief":
                     clearScreen();
-                    ArrayList<Card> trashCards = new ArrayList<>();
+                    Deck trashCards = new Deck();
                     for (int i = 0; i < playerList.size(); i++) {
                         if (player != playerList.get(i)) {
                             if (willGetAttacked(playerList.get(i))) {
-                                ArrayList<Card> tempList = new ArrayList<>();
+                                Deck tempList = new Deck();
                                 Player playerOne = playerList.get(i);
                                 for (int x = 0; x < 2; x++) {
+                                    if(playerOne.getDeck("Deck").isEmpty()) {
+                                        playerOne.getDeck("Discard").moveDeckTo(playerOne.getDeck("Deck"));
+                                        playerOne.getDeck("Deck").shuffle();
+                                    }
                                     card = playerOne.getDeck("Deck").pop();
                                     tempList.add(card);
                                 }
+                                System.out.print(playerOne.getName() + " shows:\n");
+                                for(Card c : tempList) {
+                                    System.out.print(c.toString());
+                                }
+                                boolean hasTrashed = false;
                                 for (Card c : tempList) {
-                                    if (c.getType().equals("Treasure")) {
-                                        System.out.println(playerOne.getName() + " shows " + c.toString());
-                                        userInput = getUserInput("Press 1 to trash/steal card or press 2 to discard: ", 1, 2);
+                                    if (c.isTreasure()  && !hasTrashed) {
+                                        userInput = getUserInput("Press 1 to trash/steal "+c.getName()+" or press 2 to discard: ", 1, 2);
                                         if (userInput == 1) {
                                             trashCards.add(c);
+                                            hasTrashed = true;
                                         } else {
                                             playerOne.getDeck("Discard").add(c);
                                         }
@@ -576,6 +599,7 @@ public class CommandLine {
                                     }
 
                                 }
+                                getUserInput("Press 1 to continue", 1, 1);
                             }
                         }
                     }
@@ -589,7 +613,7 @@ public class CommandLine {
                     }
 
                     break;
-                case "Witch":
+                case "witch":
                     for (int i = 0; i < playerList.size(); i++) {
                         if (player != playerList.get(i)) {
                             if (willGetAttacked(playerList.get(i))) {
